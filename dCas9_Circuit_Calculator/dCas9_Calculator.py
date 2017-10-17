@@ -103,10 +103,10 @@ class sgRNA(object):
         self.targetSequenceEnergetics = {}
         for fullPAM in self.Cas9Calculator.returnAllPAMs():
             #print fullPAM
-            dG_PAM = Cas9Calculator.calc_dG_PAM(fullPAM)
-            dG_supercoiling = Cas9Calculator.calc_dG_supercoiling(sigmaInitial = -0.05, targetSequence = 20 * "N")  #only cares about length of sequence
+            dG_PAM = self.Cas9Calculator.calc_dG_PAM(fullPAM)
+            dG_supercoiling = self.Cas9Calculator.calc_dG_supercoiling(sigmaInitial = -0.05, targetSequence = 20 * "N")  #only cares about length of sequence
             for (targetSequence,targetPosition) in targetDictionary[fullPAM]:
-                dG_exchange = Cas9Calculator.calc_dG_exchange(self.guideSequence,targetSequence)
+                dG_exchange = self.Cas9Calculator.calc_dG_exchange(self.guideSequence,targetSequence)
                 dG_target = dG_PAM + dG_supercoiling + dG_exchange
                 # if sequence:
 #                         if targetSequence==sequence:
@@ -309,8 +309,6 @@ def runMultiple(guideRNAList, GenbankFilename, outputFilename):
             result.run()
             tempDillName = record.id + guideRNA
             result.exportAsDill(tempDillName)
-            
-            result.targetSequenceEnergetics #[nucleotide position] = {'sequence' : targetSequence, 'dG_PAM' : dG_PAM, 'full_PAM' : fullPAM, 'dG_exchange' : dG_exchange, 'dG_supercoiling' : dG_supercoiling, 'dG_target' : dG_target}
             
             for (nt_position, info) in result.targetSequenceEnergetics.items():
                 BigDict[(record.id, nt_position)] = [guideRNA, info['sequence'], info['dG_target']]
