@@ -87,7 +87,7 @@ class sgRNA(object):
         self.partition_function = 1
         self.targetSequenceEnergetics = {}
         
-        self.debug = True
+        self.debug = False
         
     def run(self, sequence=None):
     
@@ -131,9 +131,7 @@ class sgRNA(object):
         
         end_time = time()
         print "Elapsed Time: ", end_time - begin_time
-        bestDict=self.targetSequenceEnergetics[dG_source][dG_pos]
-        return math.exp(-bestDict['dG_target'] / self.Cas9Calculator.RT)/self.partition_function, self.partition_function, bestDict['dG_target'], bestDict['dG_PAM'], bestDict['dG_supercoiling'], bestDict['dG_exchange']
-    
+            
     def exportAsDill(self):
     
         handle = open('sgRNA_%s.dill' % self.guideSequence,'wb')
