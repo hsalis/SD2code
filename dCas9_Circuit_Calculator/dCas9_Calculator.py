@@ -9,6 +9,12 @@ from Bio.Seq import *
 import pandas as pd
 
 
+def fixSequence(seq):
+
+    seq = seq.replace('N','A')
+    
+    return seq
+
 def mers(length): 
     """Generates multimers for sorting through list of 10mers based on user 
     specification. Multimers generated act as the keys for generating a 
@@ -161,7 +167,7 @@ class clCas9Calculator(object):
     
         targetDictionary = {}
             
-        fullSequence = str(SeqRecord.seq)+str(SeqRecord.seq.reverse_complement())
+        fullSequence = fixSequence(str(SeqRecord.seq)+str(SeqRecord.seq.reverse_complement()))
         
         print("LOG: GENERATING k-MERS for all nucleotide positions containing canonical or non-canonical PAMs")
         positionsAtMers = identifyNucleotidePositionsOfMers(fullSequence, length = 10)
