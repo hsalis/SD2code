@@ -305,7 +305,7 @@ def runMultiple(guideRNAList, GenbankFilename, outputFilename):
         for guideRNA in guideRNAList:
             print ("LOG: Running dCas9_Calculator using sgRNA Guide RNA Sequence: %s" % guideRNA)
     
-            result = sgRNA(guideSequence, Cas9Calculator)
+            result = sgRNA(guideRNA, Cas9Calculator)
             result.run()
             tempDillName = record.id + guideRNA
             result.exportAsDill(tempDillName)
