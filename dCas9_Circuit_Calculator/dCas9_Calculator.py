@@ -173,7 +173,7 @@ class clCas9Calculator(object):
         positionsAtMers = identifyNucleotidePositionsOfMers(fullSequence, length = 10)
         print("LOG: %s k-MER keys generated" % len(list(positionsAtMers.keys())))
         
-        targetDictionary[filename] = {}
+        targetDictionary = {}
         targetSequenceList = []
         for fullPAM in self.returnAllPAMs():
             targetSequenceList = identifyTargetSequencesMatchingPAM(fullPAM, positionsAtMers, fullSequence)
