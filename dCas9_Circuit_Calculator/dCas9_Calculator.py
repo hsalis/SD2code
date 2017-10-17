@@ -1,13 +1,13 @@
+import sys
+sys.path.append('../../')
+
 import scipy.io
-import math
-import operator
+import math, operator, csv, dill
 from time import time
 from Bio import SeqIO
 from Bio.Seq import *
-import csv
-import dill
+import pandas as pd
 
-import sys
 
 def mers(length): 
     """Generates multimers for sorting through list of 10mers based on user 
@@ -76,7 +76,7 @@ def identifyTargetSequencesMatchingPAM(PAM_seq, positions_at_mers, full_sequence
                 target_sequence = full_sequence[begin : end]
                 target_sequence_list.append((target_sequence, nt))
     return target_sequence_list
-    
+
 class sgRNA(object):
 
     def __init__(self, guideSequence, Cas9Calculator):
@@ -89,23 +89,20 @@ class sgRNA(object):
         
         self.debug = False
         
-    def run(self, sequence=None):
+    def run(self):
     
         begin_time = time()
-        dG_best=float(1e12)
-        dG_source=None
-        dG_pos=None
         targetDictionary = self.Cas9Calculator.targetDictionary
-        for (source,targets) in list(targetDictionary.items()):
-            self.targetSequenceEnergetics[source] = {}
-            for fullPAM in self.Cas9Calculator.returnAllPAMs():
-                #print fullPAM
-                dG_PAM = Cas9Calculator.calc_dG_PAM(fullPAM)
-                dG_supercoiling = Cas9Calculator.calc_dG_supercoiling(sigmaInitial = -0.05, targetSequence = 20 * "N")  #only cares about length of sequence
-                for (targetSequence,targetPosition) in targetDictionary[source][fullPAM]:
-                    dG_exchange = Cas9Calculator.calc_dG_exchange(self.guideSequence,targetSequence)
-                    dG_target = dG_PAM + dG_supercoiling + dG_exchange
-                    # if sequence:
+        
+        self.targetSequenceEnergetics = {}
+        for fullPAM in self.Cas9Calculator.returnAllPAMs():
+            #print fullPAM
+            dG_PAM = Cas9Calculator.calc_dG_PAM(fullPAM)
+            dG_supercoiling = Cas9Calculator.calc_dG_supercoiling(sigmaInitial = -0.05, targetSequence = 20 * "N")  #only cares about length of sequence
+            for (targetSequence,targetPosition) in targetDictionary[fullPAM]:
+                dG_exchange = Cas9Calculator.calc_dG_exchange(self.guideSequence,targetSequence)
+                dG_target = dG_PAM + dG_supercoiling + dG_exchange
+                # if sequence:
 #                         if targetSequence==sequence:
 #                             print "true sequence found"
 #                             dG_best=float(dG_target)
@@ -117,24 +114,24 @@ class sgRNA(object):
 #                             dG_best=float(dG_target)
 #                             dG_source=str(source)
 #                             dG_pos=int(targetPosition)
-                    self.targetSequenceEnergetics[source][targetPosition] = {'sequence' : targetSequence, 'dG_PAM' : dG_PAM, 'full_PAM' : fullPAM, 'dG_exchange' : dG_exchange, 'dG_supercoiling' : dG_supercoiling, 'dG_target' : dG_target}
-                    self.partition_function += math.exp(-dG_target / self.Cas9Calculator.RT)
-                    
-                    if self.debug:
-                        print("targetSequence : ", targetSequence)
-                        print("fullPAM: " , fullPAM)
-                        print("dG_PAM: ", dG_PAM)
-                        print("dG_supercoiling: ", dG_supercoiling)
-                        print("dG_exchange: ", dG_exchange)
-                        print("dG_target: ", dG_target)
-                        print("Partition function (so far): ", self.partition_function)
+                self.targetSequenceEnergetics[targetPosition] = {'sequence' : targetSequence, 'dG_PAM' : dG_PAM, 'full_PAM' : fullPAM, 'dG_exchange' : dG_exchange, 'dG_supercoiling' : dG_supercoiling, 'dG_target' : dG_target}
+                self.partition_function += math.exp(-dG_target / self.Cas9Calculator.RT)
+                
+                if self.debug:
+                    print("targetSequence : ", targetSequence)
+                    print("fullPAM: " , fullPAM)
+                    print("dG_PAM: ", dG_PAM)
+                    print("dG_supercoiling: ", dG_supercoiling)
+                    print("dG_exchange: ", dG_exchange)
+                    print("dG_target: ", dG_target)
+                    print("Partition function (so far): ", self.partition_function)
         
         end_time = time()
         print("Elapsed Time: ", end_time - begin_time)
     
-    def exportAsDill(self):
+    def exportAsDill(self, name):
     
-        handle = open('sgRNA_%s.dill' % self.guideSequence,'wb')
+        handle = open('%s.dill' % name,'wb')
         dill.dump(self, handle, -1)
         handle.close()
         
@@ -160,29 +157,23 @@ class clCas9Calculator(object):
             for nt in ('A','G','C','T'):        #nt + PAMpart will be all possible 'NGGT'
                 yield nt + PAMpart
     
-    def initTargetFinder(self, filename_list):
+    def initTargetFinder(self, SeqRecord):
     
         targetDictionary = {}
-    
-        for filename in filename_list:
-            handle = open(filename,'r')
-            records = SeqIO.parse(handle,"genbank")
-            record = next(records)
-            handle.close()
             
-            fullSequence = str(record.seq)+str(record.seq.reverse_complement())
-            
-            print("LOG: GENERATING k-MERS for all nucleotide positions containing canonical or non-canonical PAMs")
-            positionsAtMers = identifyNucleotidePositionsOfMers(fullSequence, length = 10)
-            print("LOG: %s k-MER keys generated" % len(list(positionsAtMers.keys())))
-            
-            targetDictionary[filename] = {}
-            targetSequenceList = []
-            for fullPAM in self.returnAllPAMs():
-                targetSequenceList = identifyTargetSequencesMatchingPAM(fullPAM, positionsAtMers, fullSequence)
-                targetDictionary[filename][fullPAM] = targetSequenceList
-                print("LOG: There are %s potential off-target sites with %s PAM sequence" % (len(targetSequenceList), fullPAM))
-            self.targetDictionary = targetDictionary
+        fullSequence = str(SeqRecord.seq)+str(SeqRecord.seq.reverse_complement())
+        
+        print("LOG: GENERATING k-MERS for all nucleotide positions containing canonical or non-canonical PAMs")
+        positionsAtMers = identifyNucleotidePositionsOfMers(fullSequence, length = 10)
+        print("LOG: %s k-MER keys generated" % len(list(positionsAtMers.keys())))
+        
+        targetDictionary[filename] = {}
+        targetSequenceList = []
+        for fullPAM in self.returnAllPAMs():
+            targetSequenceList = identifyTargetSequencesMatchingPAM(fullPAM, positionsAtMers, fullSequence)
+            targetDictionary[fullPAM] = targetSequenceList
+            print("LOG: There are %s potential off-target sites with %s PAM sequence" % (len(targetSequenceList), fullPAM))
+        self.targetDictionary = targetDictionary
 		
     def printModelInfo(self):
         m=0
@@ -294,14 +285,71 @@ class clCas9Calculator(object):
         sigmaFinal = -0.08
         dG_supercoiling = 10.0 * len(targetSequence) * self.RT * (sigmaFinal**2 - sigmaInitial**2)
         return dG_supercoiling
-                        
+
+def runMultiple(guideRNAList, GenbankFilename, outputFilename):
+
+    BigDict = {}
+    handle = open(GenbankFilename,'r')
+    records = SeqIO.parse(handle,"genbank")
+    for (i,record) in enumerate(records):
+        print("LOG:  Running dCas9_Calculator on Genbank record #%s: %s" % (i, record.locus) )
+        
+        Cas9Calculator=clCas9Calculator(record)
+        
+        for guideRNA in guideRNAList:
+            print ("LOG: Running dCas9_Calculator using sgRNA Guide RNA Sequence: %s" % guideRNA)
+    
+            sgRNA = sgRNA(guideSequence, Cas9Calculator)
+            sgRNA.run()
+            tempDillName = record.locus + guideRNA
+            sgRNA.exportAsDill(tempDillName)
+            
+            sgRNA.targetSequenceEnergetics #[nucleotide position] = {'sequence' : targetSequence, 'dG_PAM' : dG_PAM, 'full_PAM' : fullPAM, 'dG_exchange' : dG_exchange, 'dG_supercoiling' : dG_supercoiling, 'dG_target' : dG_target}
+            
+            for (nt_position, info) in sgRNA.targetSequenceEnergetics.items():
+                BigDict[(record.locus, nt_position)] = [guideRNA, info['sequence'], info['dG_target']]
+    
+    DataStore = pd.DataFrame.from_dict(BigDict, orient='index')
+    
+    #Export to CSV
+    DataStore.to_csv(outputFilename + '.csv', sep = '\t')
+    
+    #Export to Excel
+    DataStore.to_excel(outputFilename + '.xlsx')
+    
+    #Export to HTML
+    DataStore.to_html(outputFilename + '.html')
+    
+    #Export to Pickle
+    DataStore.to_pickle(outputFilename + '.pkl')
+
 if __name__ == "__main__":
 
-    guideSequence = 'TACGTACACAAGAGCTCTAG'	  
-    Cas9Calculator=clCas9Calculator(['NC_000913.gbk'])
-    sgRNA1 = sgRNA(guideSequence, Cas9Calculator)
-    sgRNA1.run()
-    sgRNA1.exportAsDill()
+    #sgRNA guide sequences in "Digital logic circuits in yeast with CRISPR-dCas9 NOR gates" by Gander et. al.
+    r1 =  'GGAACGTGATTGAATAACTT'
+    r2 =  'ACCAACGCAAAAAGATTTAG'
+    r3 =  'CATTGCCATACACCTTGAGG'
+    r4 =  'GAAAATCACAACTCTACTGA'
+    r5 =  'GAAGTCAGTTGACAGAGTCG'
+    r6 =  'GTGGTAACTTGCTCCATGTC'
+    r7 =  'CTTTACGTATAGGTTTAGAG'
+    r8 =  'CGCATTTCCTATTCAAACTT'
+    r9 =  'GCAACCCACAAATATCCAGT'
+    r10 = 'GTGACATAAACATTCGACTC'
+    r11 = 'GGGCAAAGAGACGCTTGTCG'
+    r12 = 'GAAGTCATCGCTTCTTGTCG'
+    r13 = 'GAGTTGACAAAGTATAACTT'
+    r14 = 'GAAGTTTCAGAATCTCGACG'
+    r15 = 'GGCTAGGATCCATCTGACTT'
+    r16 = 'GCAACCATAGACTCTCCAGG'
+    r17 = 'ACCACAACTGAGTCGAACCT'
+    r18 = 'GGGTAGCAACACTCGTACTT'
+    r19 = 'GTAAAAGATAACTCTGTTGC'
+    r20 = 'TCTACCCGAGACTCAAACGG'
+
+    guideRNAList = [r1, r3, r6, r7, r9]
+    Cas9Calculator=clCas9Calculator(['../resources/GCA_000292815.1_ASM29281v1_genomic.gbff'])
+    runMultiple(guideRNAList, '../resources/GCA_000292815.1_ASM29281v1_genomic.gbff', 'YeastGate_dCas9_Binding_Sites')
     
     
     # Cas9Calculator=clCas9Calculator(['NC_000913.gb'],quickmode=True)
