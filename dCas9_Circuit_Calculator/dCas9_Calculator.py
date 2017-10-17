@@ -305,14 +305,14 @@ def runMultiple(guideRNAList, GenbankFilename, outputFilename):
         for guideRNA in guideRNAList:
             print ("LOG: Running dCas9_Calculator using sgRNA Guide RNA Sequence: %s" % guideRNA)
     
-            sgRNA = sgRNA(guideSequence, Cas9Calculator)
-            sgRNA.run()
+            result = sgRNA(guideSequence, Cas9Calculator)
+            result.run()
             tempDillName = record.id + guideRNA
-            sgRNA.exportAsDill(tempDillName)
+            result.exportAsDill(tempDillName)
             
-            sgRNA.targetSequenceEnergetics #[nucleotide position] = {'sequence' : targetSequence, 'dG_PAM' : dG_PAM, 'full_PAM' : fullPAM, 'dG_exchange' : dG_exchange, 'dG_supercoiling' : dG_supercoiling, 'dG_target' : dG_target}
+            result.targetSequenceEnergetics #[nucleotide position] = {'sequence' : targetSequence, 'dG_PAM' : dG_PAM, 'full_PAM' : fullPAM, 'dG_exchange' : dG_exchange, 'dG_supercoiling' : dG_supercoiling, 'dG_target' : dG_target}
             
-            for (nt_position, info) in sgRNA.targetSequenceEnergetics.items():
+            for (nt_position, info) in result.targetSequenceEnergetics.items():
                 BigDict[(record.id, nt_position)] = [guideRNA, info['sequence'], info['dG_target']]
     
     DataStore = pd.DataFrame.from_dict(BigDict, orient='index')
