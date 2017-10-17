@@ -137,7 +137,7 @@ class sgRNA(object):
         
 class clCas9Calculator(object):
 
-    def __init__(self,filename_list, quickmode=False, ModelName='InvitroModel.mat'):
+    def __init__(self,SeqRecord, quickmode=False, ModelName='InvitroModel.mat'):
         
         self.quickmode=quickmode
         self.ModelName=ModelName
@@ -149,7 +149,7 @@ class clCas9Calculator(object):
         # the PAMs with the highest dG, ignoring other PAM sequences by setting their dG to 0
         self.PAM_energy={'GGA':-9.8,'GGT':-10,'GGC':-10,'GGG':-9.9,'CGG':-8.1,'TGG':-7.8,'AGG':-8.1,'AGC':-8.1,'AGT':-8.1,'AGA':-7.9,'GCT':-7.1,'GCG':-6.9,'ATT':-7.2,'ATC':-6.4,'TTT':-7.6,'TTG':-6.8,'GTA':-7.4,'GTT':-7.9,'GTG':-7.7,'AAT':-7,'AAG':-7,'TAT':-7.2,'TAG':-7.2,'GAA':-7.2,'GAT':-7.3,'GAC':-7.2,'GAG':-7.3}
     
-        self.initTargetFinder(filename_list)
+        self.initTargetFinder(SeqRecord)
     
     def returnAllPAMs(self):
         
@@ -348,7 +348,6 @@ if __name__ == "__main__":
     r20 = 'TCTACCCGAGACTCAAACGG'
 
     guideRNAList = [r1, r3, r6, r7, r9]
-    Cas9Calculator=clCas9Calculator(['../resources/GCA_000292815.1_ASM29281v1_genomic.gbff'])
     runMultiple(guideRNAList, '../resources/GCA_000292815.1_ASM29281v1_genomic.gbff', 'YeastGate_dCas9_Binding_Sites')
     
     
