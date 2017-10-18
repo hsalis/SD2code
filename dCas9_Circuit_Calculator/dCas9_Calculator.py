@@ -328,7 +328,8 @@ def runMultiple(guideRNAList, GenbankFilename, outputFilename):
         
     print "Using MPI? ", use_MPI
     
-    
+    if use_MPI: pool.start()
+        
     BigDict = {}
     handle = open(GenbankFilename,'r')
     records = SeqIO.parse(handle,"genbank")
@@ -346,7 +347,6 @@ def runMultiple(guideRNAList, GenbankFilename, outputFilename):
     
     BigDict = {}
     if use_MPI:
-        pool.start()
         resultList = pool.map(evaluate, inputList)
     else:
         resultList = map(evaluate, inputList)
