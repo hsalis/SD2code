@@ -300,7 +300,7 @@ def runMultiple(guideRNAList, GenbankFilename, outputFilename):
     for (i,record) in enumerate(records):
         print("LOG:  Running dCas9_Calculator on Genbank record #%s: %s" % (i, record.id) )
         
-        Cas9Calculator=clCas9Calculator(record)
+        Cas9Calculator=clCas9Calculator(record, quickmode=True)
         
         for guideRNA in guideRNAList:
             print ("LOG: Running dCas9_Calculator using sgRNA Guide RNA Sequence: %s" % guideRNA)
@@ -311,9 +311,9 @@ def runMultiple(guideRNAList, GenbankFilename, outputFilename):
             result.exportAsDill(tempDillName)
             
             for (nt_position, info) in result.targetSequenceEnergetics.items():
-                BigDict[(record.id, nt_position)] = [guideRNA, info['sequence'], info['dG_target']]
+                BigDict[(record.id, nt_position)] = [guideRNA, info['sequence'], info['full_PAM'], info['dG_target']]
     
-    DataStore = pd.DataFrame.from_dict(BigDict, orient='index')
+    DataStore = pd.DataFrame.from_dict(BigDict, orient='index', columns = ['guide RNA sequence', 'target DNA sequence', 'PAM sequence', 'dG_target'])
     
     #Export to CSV
     DataStore.to_csv(outputFilename + '.csv', sep = '\t')
