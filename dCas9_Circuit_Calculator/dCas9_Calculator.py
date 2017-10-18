@@ -330,7 +330,10 @@ def runMultiple(guideRNAList, GenbankFilename, outputFilename):
             for (nt_position, info) in result.targetSequenceEnergetics.items():
                 BigDict[(record.id, nt_position)] = [guideRNA, info['sequence'], info['full_PAM'], info['dG_target']]
     
-    DataStore = pd.DataFrame.from_dict(BigDict, orient='index', columns = ['guide RNA sequence', 'target DNA sequence', 'PAM sequence', 'dG_target'])
+            break
+        break
+    
+    DataStore = pd.DataFrame(data = BigDict, columns = ['guide RNA sequence', 'target DNA sequence', 'PAM sequence', 'dG_target'])
     
     #Export to CSV
     DataStore.to_csv(outputFilename + '.csv', sep = '\t')
