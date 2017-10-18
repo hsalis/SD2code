@@ -1,3 +1,19 @@
+######################################################################################
+# dCas9_Calculator.py                                                                #
+#                                                                                    #
+# PYTHON: from dCas9_Calculator import runMultiple                                   #
+#  runMultiple(guideRNAList, genomeGenbankFile, outputFilename (no extension)        #
+#                                                                                    #
+# A Python module that calculates the locations of off-target dCas9 binding sites    #
+# and their corresponding binding free energies (dG_target). The output data         #
+# is saved in CSV, Excel, HTML, and Pickle formats                                   #
+#                                                                                    #
+# Author: Iman Farasat and Howard Salis                                              #
+#  Citation: Farasat, Iman, and Howard M. Salis. "A biophysical model of CRISPR/Cas9 #
+#  activity for rational design of genome editing and gene regulation."              #
+#  PLoS computational biology 12, no. 1 (2016): e1004724.                            #
+######################################################################################
+
 import sys
 sys.path.append('../../')
 
