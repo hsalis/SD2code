@@ -350,10 +350,13 @@ def runMultiple(guideRNAList, GenbankFilename, outputFilename):
         resultList = pool.map(evaluate, inputList)
     else:
         resultList = map(evaluate, inputList)
-        
+    
+    dG_THRESHOLD = 0.0    
+    
     for result in resultList:
         for ((id, pos), info) in result.items():
-            BigDict[(id, pos)] = info
+            if info[3] < dG_THRESHOLD:
+                BigDict[(id, pos)] = info
             
     SortedBigDict = OrderedDict( sorted(BigDict.items(), key=lambda x:x[1][3], reverse=False) )
     
