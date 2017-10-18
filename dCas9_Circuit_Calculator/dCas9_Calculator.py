@@ -334,11 +334,13 @@ def runMultiple(guideRNAList, GenbankFilename, outputFilename):
     handle = open(GenbankFilename,'r')
     records = SeqIO.parse(handle,"genbank")
     inputList = []
+    seqLengths = {}
     
     for (i,record) in enumerate(records):
         print("LOG:  Running dCas9_Calculator on Genbank record #%s: %s" % (i, record.id) )
         
         Cas9Calculator=clCas9Calculator(record, quickmode=True)
+        seqLengths[record.id] = len(str(record.seq))
         
         for guideRNA in guideRNAList:
             inputList.append( (record.id, guideRNA, Cas9Calculator) )
@@ -356,7 +358,13 @@ def runMultiple(guideRNAList, GenbankFilename, outputFilename):
     for result in resultList:
         for ((id, pos), info) in result.items():
             if info[3] < dG_THRESHOLD:
-                BigDict[(id, pos)] = info
+                if pos > seqLengths[id]:
+                    strand = "-"
+                    real_pos = 2 * seqLengths[id] - pos
+                else:
+                    strand = "+"
+                    real_pos = pos
+                BigDict[(id, real_pos, strand)] = info
             
     SortedBigDict = OrderedDict( sorted(BigDict.items(), key=lambda x:x[1][3], reverse=False) )
     
