@@ -100,6 +100,23 @@ def identifyTargetSequencesMatchingPAM(PAM_seq, positions_at_mers, full_sequence
                 target_sequence_list.append((target_sequence, nt))
     return target_sequence_list
 
+
+def evaluate(guideSeq, Cas9CalculatorInstance):
+
+    targetSequenceEnergetics = {}
+    
+    targetDictionary = Cas9CalculatorInstance.targetDictionary
+    
+    for fullPAM in Cas9CalculatorInstance.returnAllPAMs():
+        #print fullPAM
+        dG_PAM = Cas9CalculatorInstance.calc_dG_PAM(fullPAM)
+        dG_supercoiling = Cas9CalculatorInstance.calc_dG_supercoiling(sigmaInitial = -0.05, targetSequence = 20 * "N")  #only cares about length of sequence
+        for (targetSequence,targetPosition) in targetDictionary[fullPAM]:
+            dG_exchange = Cas9CalculatorInstance.calc_dG_exchange(guideSeq,targetSequence)
+            dG_target = dG_PAM + dG_supercoiling + dG_exchange
+            targetSequenceEnergetics[targetPosition] = {'sequence' : targetSequence, 'dG_PAM' : dG_PAM, 'full_PAM' : fullPAM, 'dG_exchange' : dG_exchange, 'dG_supercoiling' : dG_supercoiling, 'dG_target' : dG_target}
+    return targetSequenceEnergetics
+    
 class sgRNA(object):
 
     def __init__(self, guideSequence, Cas9Calculator):
@@ -125,18 +142,7 @@ class sgRNA(object):
             for (targetSequence,targetPosition) in targetDictionary[fullPAM]:
                 dG_exchange = self.Cas9Calculator.calc_dG_exchange(self.guideSequence,targetSequence)
                 dG_target = dG_PAM + dG_supercoiling + dG_exchange
-                # if sequence:
-#                         if targetSequence==sequence:
-#                             print "true sequence found"
-#                             dG_best=float(dG_target)
-#                             dG_source=str(source)
-#                             dG_pos=int(targetPosition)
-#                     else:
-#                         if dG_target<dG_best:
-#                             print "overtaken"
-#                             dG_best=float(dG_target)
-#                             dG_source=str(source)
-#                             dG_pos=int(targetPosition)
+
                 self.targetSequenceEnergetics[targetPosition] = {'sequence' : targetSequence, 'dG_PAM' : dG_PAM, 'full_PAM' : fullPAM, 'dG_exchange' : dG_exchange, 'dG_supercoiling' : dG_supercoiling, 'dG_target' : dG_target}
                 self.partition_function += math.exp(-dG_target / self.Cas9Calculator.RT)
                 
