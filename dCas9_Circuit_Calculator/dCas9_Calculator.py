@@ -17,6 +17,7 @@
 
 import sys
 sys.path.append('../../')
+sys.path.append('../shared')
 
 import scipy.io
 import math, operator, csv, dill
@@ -24,6 +25,7 @@ from time import time
 from Bio import SeqIO
 from Bio.Seq import *
 import pandas as pd
+from collections import OrderedDict
 
 
 def fixSequence(seq):
@@ -100,23 +102,6 @@ def identifyTargetSequencesMatchingPAM(PAM_seq, positions_at_mers, full_sequence
                 target_sequence_list.append((target_sequence, nt))
     return target_sequence_list
 
-
-def evaluate(guideSeq, Cas9CalculatorInstance):
-
-    targetSequenceEnergetics = {}
-    
-    targetDictionary = Cas9CalculatorInstance.targetDictionary
-    
-    for fullPAM in Cas9CalculatorInstance.returnAllPAMs():
-        #print fullPAM
-        dG_PAM = Cas9CalculatorInstance.calc_dG_PAM(fullPAM)
-        dG_supercoiling = Cas9CalculatorInstance.calc_dG_supercoiling(sigmaInitial = -0.05, targetSequence = 20 * "N")  #only cares about length of sequence
-        for (targetSequence,targetPosition) in targetDictionary[fullPAM]:
-            dG_exchange = Cas9CalculatorInstance.calc_dG_exchange(guideSeq,targetSequence)
-            dG_target = dG_PAM + dG_supercoiling + dG_exchange
-            targetSequenceEnergetics[targetPosition] = {'sequence' : targetSequence, 'dG_PAM' : dG_PAM, 'full_PAM' : fullPAM, 'dG_exchange' : dG_exchange, 'dG_supercoiling' : dG_supercoiling, 'dG_target' : dG_target}
-    return targetSequenceEnergetics
-    
 class sgRNA(object):
 
     def __init__(self, guideSequence, Cas9Calculator):
@@ -136,7 +121,6 @@ class sgRNA(object):
         
         self.targetSequenceEnergetics = {}
         for fullPAM in self.Cas9Calculator.returnAllPAMs():
-            #print fullPAM
             dG_PAM = self.Cas9Calculator.calc_dG_PAM(fullPAM)
             dG_supercoiling = self.Cas9Calculator.calc_dG_supercoiling(sigmaInitial = -0.05, targetSequence = 20 * "N")  #only cares about length of sequence
             for (targetSequence,targetPosition) in targetDictionary[fullPAM]:
@@ -315,43 +299,80 @@ class clCas9Calculator(object):
         dG_supercoiling = 10.0 * len(targetSequence) * self.RT * (sigmaFinal**2 - sigmaInitial**2)
         return dG_supercoiling
 
-def runMultiple(guideRNAList, GenbankFilename, outputFilename):
+def evaluate( (id, guideRNA, Cas9CalculatorInstance) ):
 
+    resultDict = {}
+    print ("LOG: Running dCas9_Calculator using record %s and sgRNA Guide RNA Sequence: %s" % (id, guideRNA) )
+    result = sgRNA(guideRNA, Cas9CalculatorInstance)
+    result.run()
+    #tempDillName = id + guideRNA
+    #result.exportAsDill(tempDillName)
+    
+    for (nt_position, info) in result.targetSequenceEnergetics.items():
+        resultDict[(id, nt_position)] = [guideRNA, info['sequence'], info['full_PAM'], info['dG_target']]
+    return resultDict
+
+def runMultiple(guideRNAList, GenbankFilename, outputFilename):
+    
+    try:
+        from mpi4py import MPI
+        comm = MPI.COMM_WORLD
+        if comm.Get_size() > 1:
+            use_MPI = True
+            from MPI_pool import Pool
+            pool = Pool(MPI.COMM_WORLD)
+        else:
+            use_MPI = False
+    except:
+        use_MPI = False
+        
+    print "Using MPI? ", use_MPI
+    
+    
     BigDict = {}
     handle = open(GenbankFilename,'r')
     records = SeqIO.parse(handle,"genbank")
+    inputList = []
+    
     for (i,record) in enumerate(records):
         print("LOG:  Running dCas9_Calculator on Genbank record #%s: %s" % (i, record.id) )
         
         Cas9Calculator=clCas9Calculator(record, quickmode=True)
         
         for guideRNA in guideRNAList:
-            print ("LOG: Running dCas9_Calculator using sgRNA Guide RNA Sequence: %s" % guideRNA)
+            inputList.append( (record.id, guideRNA, Cas9Calculator) )
+        
+    handle.close()
     
-            result = sgRNA(guideRNA, Cas9Calculator)
-            result.run()
-            tempDillName = record.id + guideRNA
-            result.exportAsDill(tempDillName)
+    BigDict = {}
+    if use_MPI:
+        pool.start()
+        resultList = pool.map(evaluate, inputList)
+    else:
+        resultList = map(evaluate, inputList)
+        
+    for result in resultList:
+        for ((id, pos), info) in result.items():
+            BigDict[(id, pos)] = info
             
-            for (nt_position, info) in result.targetSequenceEnergetics.items():
-                BigDict[(record.id, nt_position)] = [guideRNA, info['sequence'], info['full_PAM'], info['dG_target']]
+    SortedBigDict = OrderedDict( sorted(BigDict.items(), key=lambda x:x[1][3], reverse=False) )
     
-            break
-        break
+    print "Number of Off-Target Sites Identified (of varying affinity): %s" % len(list(BigDict.keys()))
+    DataStore = pd.DataFrame.from_dict(SortedBigDict, orient = 'index')
+    DataStore.rename(columns={0 : 'guide RNA sequence', 1 : 'target DNA sequence', 2 : 'PAM sequence', 3 : 'dG_target'}, inplace=True)
     
-    DataStore = pd.DataFrame(data = BigDict, columns = ['guide RNA sequence', 'target DNA sequence', 'PAM sequence', 'dG_target'])
-    
+    print "Exporting to CSV"
     #Export to CSV
     DataStore.to_csv(outputFilename + '.csv', sep = '\t')
-    
+
+    print "Exporting to Excel"    
     #Export to Excel
     DataStore.to_excel(outputFilename + '.xlsx')
     
+    #print "Exporting to HTML"  
     #Export to HTML
-    DataStore.to_html(outputFilename + '.html')
-    
-    #Export to Pickle
-    DataStore.to_pickle(outputFilename + '.pkl')
+    #DataStore.to_html(outputFilename + '.html')
+
 
 if __name__ == "__main__":
 
