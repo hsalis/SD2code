@@ -8,7 +8,8 @@
 # and their corresponding binding free energies (dG_target). The output data         #
 # is saved in CSV, Excel, HTML, and Pickle formats                                   #
 #                                                                                    #
-# Author: Iman Farasat and Howard Salis                                              #
+#  Authors: Iman Farasat, Alex Reis, Sean Halper, Howard Salis                       #
+#                                                                                    #
 #  Citation: Farasat, Iman, and Howard M. Salis. "A biophysical model of CRISPR/Cas9 #
 #  activity for rational design of genome editing and gene regulation."              #
 #  PLoS computational biology 12, no. 1 (2016): e1004724.                            #
