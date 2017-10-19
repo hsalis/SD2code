@@ -54,7 +54,7 @@ def matchOffTargetSitesWithCDSs(offTargetSites, CDSFastaFilename):
     for CDSrecord in returnSeqRecordsfromFasta(CDSFastaFilename):
         
         gene = CDSrecord.id.split(" ")[0]
-        CDSseq = CDSrecord.seq
+        CDSseq = str(CDSrecord.seq)
         
         print "LOG: Looking for off-target dCas9 binding sites in CDS %s" % gene
         
