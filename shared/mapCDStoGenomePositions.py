@@ -3,6 +3,8 @@ from Bio.Blast import NCBIWWW as blast
 from Bio.Seq import *
 import pandas as pd
 
+MAXCOUNTER = 10000
+
 def returnSeqRecordsfromFasta(filename):
 
     handle = open(filename,'r')
@@ -25,7 +27,9 @@ def returnOffTargetSequences(CSVfilename, genomeGenbankFilename):
     offTargetSites = []
     df = pd.read_csv(CSVfilename, sep = '\t')
     numRows = df.shape[0]
-    print numRows 
+
+    print "LOG: Reading %s rows in DataFrame" % numRows
+    
     for row in range(numRows):
         x = str(df.loc[row,:][0])
         dG = df.loc[row,:][3]
@@ -40,7 +44,7 @@ def returnOffTargetSequences(CSVfilename, genomeGenbankFilename):
         seq = genomeDict[id]
         offTargetBindingSiteSequence = str(seq[max(0,pos-PRE_CUTOFF) : min(pos+POST_CUTOFF, len(seq) )])
         
-        print offTargetBindingSiteSequence
+        if row > MAXCOUNTER: break
         
     offTargetSites.append( {'sequence' : offTargetBindingSiteSequence, 'locus' : id, 'position' : pos, 'strand' : strand, 'dG_target' : dG} )
     return offTargetSites
@@ -55,7 +59,6 @@ def matchOffTargetSitesWithCDSs(offTargetSites, CDSFastaFilename):
         print "LOG: Looking for off-target dCas9 binding sites in CDS %s" % gene
         
         for offTargetSite in offTargetSites:
-            print offTargetSite['sequence'], CDSseq
             if offTargetSite['sequence'] in CDSseq or CDSseq in offTargetSite['sequence']:
                 #This is a match
                 if 'gene' in offTargetSite:
