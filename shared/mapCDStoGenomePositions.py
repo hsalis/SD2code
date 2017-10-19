@@ -27,26 +27,32 @@ def returnOffTargetSequences(CSVfilename, genomeGenbankFilename):
     offTargetSites = []
     df = pd.read_csv(CSVfilename, sep = '\t')
     numRows = df.shape[0]
+ 
+    df.sort_values('dG_target', ascending=True, inplace=True) 
 
     print "LOG: Reading %s rows in DataFrame" % numRows
     
     for row in range(numRows):
-        x = str(df.loc[row,:][0])
-        dG = df.loc[row,:][3]
+
+        x = str(df.loc[row,'Unnamed: 0'])
+        PAM = str(df.loc[row,'PAM sequence'])
+        dG = df.loc[row,'dG_target']
+        guideRNA = df.loc[row,'guide RNA sequence']
         
         x = x.replace('(','').replace(')','').replace("'","")
         words = x.split(', ')
         
         id = words[0]
         pos = int(words[1])
-        strand = 1 #[2]
+        strand = words[2]
         
-        seq = genomeDict[id]
+        seq = str(genomeDict[id])
         offTargetBindingSiteSequence = str(seq[max(0,pos-PRE_CUTOFF) : min(pos+POST_CUTOFF, len(seq) )])
+
+        offTargetSites.append( {'sequence' : offTargetBindingSiteSequence, 'PAM' : PAM, 'locus' : id, 'position' : pos, 'strand' : strand, 'dG_target' : dG, 'guide RNA' : guideRNA} )
         
         if row > MAXCOUNTER: break
         
-    offTargetSites.append( {'sequence' : offTargetBindingSiteSequence, 'locus' : id, 'position' : pos, 'strand' : strand, 'dG_target' : dG} )
     return offTargetSites
     
 def matchOffTargetSitesWithCDSs(offTargetSites, CDSFastaFilename):
@@ -59,16 +65,20 @@ def matchOffTargetSitesWithCDSs(offTargetSites, CDSFastaFilename):
         print "LOG: Looking for off-target dCas9 binding sites in CDS %s" % gene
         
         for offTargetSite in offTargetSites:
+#            print "LOG: off-target sequence: %s /// CDS sequence: %s" % (offTargetSite['sequence'], CDSseq)
+
             if offTargetSite['sequence'] in CDSseq or CDSseq in offTargetSite['sequence']:
                 #This is a match
-                if 'gene' in offTargetSite:
+                if 'geneList' in offTargetSite:
                     offTargetSite['geneList'].append(gene)
                 else:
                     offTargetSite['geneList'] = [gene]
                 
                 print "LOG: Found an off-target site @ %s within CDS %s" % (offTargetSite['position'], gene)
-        
-    return offTargetSites
+    
+    mappedOffTargetSites = [x for x in offTargetSites if 'geneList' not in x]
+
+    return mappedOffTargetSites
    
 #BLAST sequence to selected Genome, return positions
 # W303 is listed in NCBI's genome database, but there are *NO HITS* to W303 (?!)
@@ -107,6 +117,7 @@ if __name__ == "__main__":
     outputFilename = '../dCas9_Circuit_Calculator/YeastGate_dCas9_Binding_Sites_In_CDSs'
     
     offTargetSites = returnOffTargetSequences(CSVfilename, genomeGenbankFilename)
+
     offTargetSites = matchOffTargetSitesWithCDSs(offTargetSites, CDSFastaFilename)
     
     df = pd.DataFrame(offTargetSites)
