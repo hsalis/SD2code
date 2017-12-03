@@ -1,12 +1,13 @@
 from Bio import SeqIO
-import re
+import re, itertools
 import difflib
 
 MININUM_MATCH_THRESHOLD = 20 #nucleotides
+PATH_TO_FILES = "../"
 
 def loadFastqFile(filename):
 
-    handle = open(filename)
+    handle = open(PATH_TO_FILES + filename)
     records = SeqIO.parse(handle, 'fastq')
     
     for record in records:
@@ -46,33 +47,23 @@ def doesMatch2( (record_5p, record_3p, patternList, pos) ):
 
     return matchList
                 
-def run(filenamePrefix, patternList, output, pool = None):
+def run(filenamePrefix, patternList, pool = None):
     
-    inputList = []
+    handle1 = open(PATH_TO_FILES + 'circuitFiltered_' + filenamePrefix + '_R1' + '.fastq','w')
+    handle2 = open(PATH_TO_FILES + 'circuitFiltered_' + filenamePrefix + '_R2' + '.fastq','w')
     
     pattern = generateRegPattern(patternList)
     
-    for (i,record_5p, record_3p) in enumerate(zip( loadFastqFile(filenamePrefix + '_R1' + '.fastq'), loadFastqFile(filenamePrefix + '_R2' + '.fastq') )):
-        inputList.append( (record_5p, record_3p, pattern, i) )
-        print "Reading read #%s with sequences %s and %s" % (i, str(record_5p.seq), str(record_3p.seq))    
-    
-    if pool is not None:
-        resultList = pool.map(doesMatch, inputList)
-    else:
-        resultList = map(doesMatch, inputList)
-    
-    filteredReadIndices = [pos for pos in resultList if pos is not False]
-    
-    handle1 = open('circuitFiltered_' + filenamePrefix + '_R1' + '.fastq')
-    handle2 = open('circuitFiltered_' + filenamePrefix + '_R2' + '.fastq')
-    for pos in filteredReadIndices:
-        (record_5p, record_3p, pattern, i) = inputList[pos]
-        handle1.write(record_5p, 'fastq')
-        handle2.write(record_3p, 'fastq')
+    for i, (record_5p, record_3p) in enumerate(itertools.izip( loadFastqFile(filenamePrefix + '_R1' + '.fastq'), loadFastqFile(filenamePrefix + '_R2' + '.fastq') )):
+        #print "Reading read #%s with sequences %s and %s" % (i, str(record_5p.seq), str(record_3p.seq))    
+        print "Reading read #%s" % i
+        result = doesMatch( (record_5p, record_3p, pattern, i) )
+        if result is not False:
+            SeqIO.write(record_5p, handle1, 'fastq')
+            SeqIO.write(record_3p, handle2, 'fastq')
 
     handle1.close()
     handle2.close()
-    
 
 if __name__ == "__main__":
     
@@ -85,8 +76,10 @@ if __name__ == "__main__":
             pool = Pool(MPI.COMM_WORLD)
         else:
             use_MPI = False
+            pool = None
     except:
         use_MPI = False
+        pool = None
         
     print "Using MPI? ", use_MPI
     
@@ -123,7 +116,7 @@ if __name__ == "__main__":
     basePatternList = [r1, r7, r9, HHRz5p, HHRz3p, sgRNA_handle, HDVRz]
     
     runDict = {}
-    runDict['XOR_00_b1_t1'] = {'filename' : '../4342742_rrna_free_reads_unmerged',
+    runDict['XOR_00_b1_t1'] = {'filename' : '4342742_rrna_free_reads_unmerged',
                                'patternList' : basePatternList}
     # runDict['XOR_00_b1_t2'] = {'filename' : '../4342743_rrna_free_reads_unmerged',
 #                                 'patternList' : basePatternList}
@@ -187,6 +180,7 @@ if __name__ == "__main__":
     
     if use_MPI: pool.start()
     for (data, info) in runDict.items():
+	print info, pool
         run(info['filename'], info['patternList'], pool = pool)
     
     if use_MPI: pool.close()
