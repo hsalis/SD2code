@@ -11,10 +11,10 @@ def loadFastqFile(filename):
         yield record
 
 def generateRegPattern(patternList):
-    pattern = re.compile('(' + '|'.join(patternList) + ')')
+    pattern = re.compile('(' + '|'.join([x.upper() for x in patternList]) + ')')
     return pattern
 
-def doesMatch(readSeq, pattern, pos):
+def doesMatch( (readSeq, pattern, pos) ):
     
     match = re.search(pattern, readSeq)
     if match is None:
@@ -46,6 +46,7 @@ def run(filename, patternList, output):
     
     for (i,record) in enumerate(loadFastqFile(filename)):
         inputList.append( (str(record.seq), pattern, i) )
+        print "Reading read #%s with sequence %s" % (i, str(record.seq))    
     
     if use_MPI:
         resultList = pool.map(doesMatch, inputList)
@@ -91,6 +92,6 @@ if __name__ == "__main__":
     HDVRz = 'caccgagtcggtgcttttggccggcatggtcccagcctcctcgctggcgccggctgggcaacatgcttcggcatggcgaatgggactgataccgtcgacctcgagtc'
     
     
-    patternList = [r1, r3, r6, r7, r9, HHrz5p, HHRz3p, sgRNA_handle, HDVRz]
-    run('4342742_rrna_free_reads_unmerged_R1.fastq', patternList, 'testfile.data')
+    patternList = [r1, r3, r6, r7, r9, HHRz5p, HHRz3p, sgRNA_handle, HDVRz]
+    run('../4342742_rrna_free_reads_unmerged_R1.fastq', patternList, 'testfile.data')
     
