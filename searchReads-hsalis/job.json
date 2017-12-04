@@ -1,0 +1,10 @@
+{
+  "name": "searchReads-job",
+  "appId": "searchReads-hsalis-0.11",
+  "archive": true,
+  "archiveSystem" : "data-tacc-work-hsalis",
+  "archivePath" : "/agaveOutput",
+  "inputs": {
+    "pathToDirectory": "agave://data-sd2e-community/ingest/Q0/sd2.ginkgo.upload/yeastgates/RNAseq/"
+  }
+}
