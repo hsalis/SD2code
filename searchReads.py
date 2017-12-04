@@ -1,9 +1,10 @@
 from Bio import SeqIO
-import re, itertools
+import re, itertools, sys
 import difflib
 
 MININUM_MATCH_THRESHOLD = 20 #nucleotides
 PATH_TO_FILES = "../"
+global PATH_TO_FILES
 
 def loadFastqFile(filename):
 
@@ -47,7 +48,7 @@ def doesMatch2( (record_5p, record_3p, patternList, pos) ):
 
     return matchList
                 
-def run(filenamePrefix, patternList, pool = None):
+def run(filenamePrefix, patternList):
     
     handle1 = open(PATH_TO_FILES + 'circuitFiltered_' + filenamePrefix + '_R1' + '.fastq','w')
     handle2 = open(PATH_TO_FILES + 'circuitFiltered_' + filenamePrefix + '_R2' + '.fastq','w')
@@ -66,6 +67,9 @@ def run(filenamePrefix, patternList, pool = None):
     handle2.close()
 
 if __name__ == "__main__":
+    
+    if len(sys.argv) > 1:
+        PATH_TO_FILES = sys.argv[1]    
     
     try:
         from mpi4py import MPI
@@ -118,69 +122,69 @@ if __name__ == "__main__":
     runDict = {}
     runDict['XOR_00_b1_t1'] = {'filename' : '4342742_rrna_free_reads_unmerged',
                                'patternList' : basePatternList}
-    # runDict['XOR_00_b1_t2'] = {'filename' : '../4342743_rrna_free_reads_unmerged',
-#                                 'patternList' : basePatternList}
-#     runDict['XOR_00_b2_t1'] = {'filename' : '../4342750_rrna_free_reads_unmerged',
-#                                 'patternList' : basePatternList}
-#     runDict['XOR_00_b2_t2'] = {'filename' : '../4342751_rrna_free_reads_unmerged',
-#                                 'patternList' : basePatternList}
-#     runDict['XOR_00_b3_t1'] = {'filename' : '../4342758_rrna_free_reads_unmerged',
-#                                 'patternList' : basePatternList}
-#     runDict['XOR_00_b3_t2'] = {'filename' : '../4342759_rrna_free_reads_unmerged',
-#                                 'patternList' : basePatternList}
-#     
-#     #====
-#     
-#     runDict['XOR_01_b1_t1'] = {'filename' : '../4342744_rrna_free_reads_unmerged',
-#                                 'patternList' : basePatternList + r6}
-#     runDict['XOR_01_b1_t2'] = {'filename' : '../4342745_rrna_free_reads_unmerged',
-#                                 'patternList' : basePatternList + r6}
-#     runDict['XOR_01_b2_t1'] = {'filename' : '../4342752_rrna_free_reads_unmerged',
-#                                 'patternList' : basePatternList + r6}
-#     runDict['XOR_01_b2_t2'] = {'filename' : '../4342753_rrna_free_reads_unmerged',
-#                                 'patternList' : basePatternList + r6}
-#     runDict['XOR_01_b3_t1'] = {'filename' : '../4342760_rrna_free_reads_unmerged',
-#                                 'patternList' : basePatternList + r6}
-#     runDict['XOR_01_b3_t2'] = {'filename' : '../4342761_rrna_free_reads_unmerged',
-#                                 'patternList' : basePatternList + r6}
-#     
-#     #====
-#     
-#     
-#     runDict['XOR_10_b1_t1'] = {'filename' : '../4342746_rrna_free_reads_unmerged',
-#                                 'patternList' : basePatternList + r3}
-#     runDict['XOR_10_b1_t2'] = {'filename' : '../4342747_rrna_free_reads_unmerged',
-#                                 'patternList' : basePatternList + r3}
-#     runDict['XOR_10_b2_t1'] = {'filename' : '../4342754_rrna_free_reads_unmerged',
-#                                 'patternList' : basePatternList + r3}
-#     runDict['XOR_10_b2_t2'] = {'filename' : '../4342755_rrna_free_reads_unmerged',
-#                                 'patternList' : basePatternList + r3}
-#     runDict['XOR_10_b3_t1'] = {'filename' : '../4342762_rrna_free_reads_unmerged',
-#                                 'patternList' : basePatternList + r3}
-#     runDict['XOR_10_b3_t2'] = {'filename' : '../4342763_rrna_free_reads_unmerged',
-#                                 'patternList' : basePatternList + r3}
-# 
-#     #====
-# 
-#                                 
-#     runDict['XOR_11_b1_t1'] = {'filename' : '../4342748_rrna_free_reads_unmerged',
-#                                 'patternList' : basePatternList + r3 + r6}
-#     runDict['XOR_11_b1_t2'] = {'filename' : '../4342749_rrna_free_reads_unmerged',
-#                                 'patternList' : basePatternList + r3 + r6}
-#     runDict['XOR_11_b2_t1'] = {'filename' : '../4342756_rrna_free_reads_unmerged',
-#                                 'patternList' : basePatternList + r3 + r6}
-#     runDict['XOR_11_b2_t2'] = {'filename' : '../4342757_rrna_free_reads_unmerged',
-#                                 'patternList' : basePatternList + r3 + r6}
-#     runDict['XOR_11_b3_t1'] = {'filename' : '../4342764_rrna_free_reads_unmerged',
-#                                 'patternList' : basePatternList + r3 + r6}
-#     runDict['XOR_11_b3_t2'] = {'filename' : '../4342765_rrna_free_reads_unmerged',
-#                                 'patternList' : basePatternList + r3 + r6}
+    runDict['XOR_00_b1_t2'] = {'filename' : '4342743_rrna_free_reads_unmerged',
+                                'patternList' : basePatternList}
+    runDict['XOR_00_b2_t1'] = {'filename' : '4342750_rrna_free_reads_unmerged',
+                                'patternList' : basePatternList}
+    runDict['XOR_00_b2_t2'] = {'filename' : '4342751_rrna_free_reads_unmerged',
+                                'patternList' : basePatternList}
+    runDict['XOR_00_b3_t1'] = {'filename' : '4342758_rrna_free_reads_unmerged',
+                                'patternList' : basePatternList}
+    runDict['XOR_00_b3_t2'] = {'filename' : '4342759_rrna_free_reads_unmerged',
+                                'patternList' : basePatternList}
+    
+    #====
+    
+    runDict['XOR_01_b1_t1'] = {'filename' : '4342744_rrna_free_reads_unmerged',
+                                'patternList' : basePatternList + r6}
+    runDict['XOR_01_b1_t2'] = {'filename' : '4342745_rrna_free_reads_unmerged',
+                                'patternList' : basePatternList + r6}
+    runDict['XOR_01_b2_t1'] = {'filename' : '4342752_rrna_free_reads_unmerged',
+                                'patternList' : basePatternList + r6}
+    runDict['XOR_01_b2_t2'] = {'filename' : '4342753_rrna_free_reads_unmerged',
+                                'patternList' : basePatternList + r6}
+    runDict['XOR_01_b3_t1'] = {'filename' : '4342760_rrna_free_reads_unmerged',
+                                'patternList' : basePatternList + r6}
+    runDict['XOR_01_b3_t2'] = {'filename' : '4342761_rrna_free_reads_unmerged',
+                                'patternList' : basePatternList + r6}
+    
+    #====
+    
+    
+    runDict['XOR_10_b1_t1'] = {'filename' : '4342746_rrna_free_reads_unmerged',
+                                'patternList' : basePatternList + r3}
+    runDict['XOR_10_b1_t2'] = {'filename' : '4342747_rrna_free_reads_unmerged',
+                                'patternList' : basePatternList + r3}
+    runDict['XOR_10_b2_t1'] = {'filename' : '4342754_rrna_free_reads_unmerged',
+                                'patternList' : basePatternList + r3}
+    runDict['XOR_10_b2_t2'] = {'filename' : '4342755_rrna_free_reads_unmerged',
+                                'patternList' : basePatternList + r3}
+    runDict['XOR_10_b3_t1'] = {'filename' : '4342762_rrna_free_reads_unmerged',
+                                'patternList' : basePatternList + r3}
+    runDict['XOR_10_b3_t2'] = {'filename' : '4342763_rrna_free_reads_unmerged',
+                                'patternList' : basePatternList + r3}
+
+    #====
+
+                                
+    runDict['XOR_11_b1_t1'] = {'filename' : '4342748_rrna_free_reads_unmerged',
+                                'patternList' : basePatternList + r3 + r6}
+    runDict['XOR_11_b1_t2'] = {'filename' : '4342749_rrna_free_reads_unmerged',
+                                'patternList' : basePatternList + r3 + r6}
+    runDict['XOR_11_b2_t1'] = {'filename' : '4342756_rrna_free_reads_unmerged',
+                                'patternList' : basePatternList + r3 + r6}
+    runDict['XOR_11_b2_t2'] = {'filename' : '4342757_rrna_free_reads_unmerged',
+                                'patternList' : basePatternList + r3 + r6}
+    runDict['XOR_11_b3_t1'] = {'filename' : '4342764_rrna_free_reads_unmerged',
+                                'patternList' : basePatternList + r3 + r6}
+    runDict['XOR_11_b3_t2'] = {'filename' : '4342765_rrna_free_reads_unmerged',
+                                'patternList' : basePatternList + r3 + r6}
     
     #====
     
     if use_MPI: pool.start()
     for (data, info) in runDict.items():
-	print info, pool
-        run(info['filename'], info['patternList'], pool = pool)
+	    print info
+        run(info['filename'], info['patternList'])
     
     if use_MPI: pool.close()
