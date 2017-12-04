@@ -1,0 +1,37 @@
+{
+  "name": "searchReads-hsalis",
+  "version": "0.1",
+  "executionType": "HPC",
+  "executionSystem": "hpc-tacc-maverick-hsalis",
+  "parallelism": "SERIAL",
+  "deploymentPath": "/apps/searchReads-hsalis",
+  "deploymentSystem": "data-tacc-work-hsalis",
+  "defaultProcessorsPerNode": 1,
+  "defaultNodeCount": 1,
+  "defaultQueue": "normal",
+  "label": "searchReads",
+  "modules": [ "load tacc-singularity/2.3.1" ],
+  "shortDescription": "Reads fastq files and searches RNA-Seq paired-end reads for uncleaved sgRNA transcripts. Produces filtered fastq files.",
+  "templatePath": "runner-template.sh",
+  "testPath": "runner-template.sh",
+  "inputs": [ {
+      "id": "pathToDirectory",
+      "value": {
+        "default": "/",
+        "visible": true,
+        "required": true
+      },
+      "details": {
+        "label": "path to directory containing fastq files",
+        "showArgument": false
+      },
+      "semantics": {
+        "minCardinality": 1,
+        "maxCardinality": 1,
+        "ontology": [ "http://edamontology.org/format_1930" ]
+      }
+    }
+  ],
+  "parameters": [],
+  "outputs": []
+}
